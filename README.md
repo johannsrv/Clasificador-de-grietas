@@ -31,20 +31,26 @@ El proyecto se compone de los siguientes elementos:
 
 * **Lenguaje de programación:** Python
 * **Biblioteca de aprendizaje automático:** TensorFlow o Keras
-* **Marco de trabajo para GUI:** Tkinter o PyQt
+* **Marco de trabajo para GUI:** Tkinter 
 * **Bibliotecas de procesamiento de imágenes:** OpenCV o Pillow
 
 ## Estructura del proyecto
 
-El proyecto está organizado en las siguientes carpetas:
+* Carpeta de imagenes de prueba
+* Carpeta de imagenes negativo
+* Carpeta de imagenes positivas
+* Archivos de entrenamiento de la red neuronal CNN_Detector de grietas.ipynb
+* archivo de imprementacion de la red neuronal Deteccion_de_grietas.py
+* imagenes para los gui
+* las imagenes que dice imagen gui # son las fotos del proyecto
 
 
 ## Instrucciones de uso
 
 1. Clonar el repositorio del proyecto en tu computadora local.
-2. Instalar las dependencias necesarias utilizando el archivo requirements.txt.
-3. Entrenar el modelo de aprendizaje automático ejecutando el archivo train.ipynb en la carpeta model.
-4. Descargar el modelo entrenado .h5 de la carpeta model.
-5. Ejecutar el archivo gui.py en la carpeta gui para iniciar la interfaz gráfica de usuario.
-6. Cargar una imagen de una grieta en la interfaz gráfica y hacer clic en el botón "Clasificar".
+2. Instalar las dependencias necesarias utilizando el archivo 
+3. Entrenar el modelo de aprendizaje automático ejecutando el archivo CNN_Detector de grietas.ipynb.
+4. De entrenar el modelo le va a salir la red ya entrenada en un archivo .h5, tener el archivo en la misma carpeta.
+5. Ejecutar el archivo Deteccion_de_grietas.py para iniciar la interfaz gráfica de usuario.
+6. Probar el archivo con imagenes ya cargadas o con la camara.
 7. La interfaz gráfica mostrará la clasificación del modelo (positiva o negativa) para la grieta.
