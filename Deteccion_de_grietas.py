@@ -1,15 +1,16 @@
 # Librerias que vamos a necesitar 
 import numpy as np
+import serial
 import cv2
 from tkinter import Tk, Label, Button, Frame, Text
 from PIL import Image, ImageTk
 from tensorflow.keras.models import load_model
 
 
+
 #................Funciones.............
 
-
-# esta funcion es para leer las imagenes adaptarlas para que se vea en el Label 
+# esta funcion es para leer las imagenes adaptarlas para que se vea en el Label
 def video(paso= False, imagen= None, selec= 0):
     global cap, modelo
 
@@ -31,17 +32,43 @@ def video(paso= False, imagen= None, selec= 0):
             frame= cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame= cv2.resize(frame, (500, 500))
             predict_image_class(frame= frame, selec= 1, model= modelo)
+            Canny = cv2.Canny(frame, 10, 150) #Aplica el algoritmo de detección de bordes Canny a la imagen
+            Canny = cv2.dilate(Canny, None, iterations=1) #La dilatación engrosa ligeramente los bordes detectados, lo que podría ayudar a definir mejor las formas de los objetos 
+            Canny = cv2.erode(Canny, None, iterations=1) #La erosión adelgaza ligeramente los bordes, con el objetivo de eliminar el ruido y mejorar la precisión de los bordes.
+
+            """
+            Encuentra contornos (límites de bordes conectados) en la imagen Canny procesada usando cv2.findContours.
+            El indicador cv2.RETR_EXTERNAL recupera solo los contornos externos que representan objetos en la imagen (no agujeros dentro de los objetos).
+            El método de aproximación cv2.CHAIN_APPROX_SIMPLE simplifica los contornos eliminando puntos redundantes, mejorando la eficiencia.
+            La función devuelve dos salidas: contours es una lista que contiene los contornos detectados en la imagen, y _ descarta la segunda salida (información de jerarquía) ya que no se usa en este contexto.
+            """
+            contours, _ = cv2.findContours(Canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+
+            # Filtrar contornos por tamaño mínimo (área o perímetro)
+            area_min = 2500  # Ajustar el valor mínimo según tu necesidad
+            contornos_filtrados = []
+            for c in contours:
+                area = cv2.contourArea(c)
+                if area >= area_min:
+                    contornos_filtrados.append(c)
+                
+
+            # Dibujar contornos filtrados
+            cv2.drawContours(frame, contornos_filtrados, -1, (180, 255, 0), 2)
 
 
             # Convertir el video
             frame= Image.fromarray(frame)
             frame= ImageTk.PhotoImage(frame)
-        
+
+            # Mostrar la imagen en el label
             video_labe.config(image= frame)
             video_labe.image= frame
             video_labe.after(10, video)
             video_labe.place(x= 650, y= 100)
     
+
 
 
 # Esta funcion es para cuando se oprima el boton de activar camara esta es la funcion que se encarga de eso 
@@ -52,7 +79,7 @@ def videocam_on():
     texto1.config(text= "Video captura: Activada")
     cam_on.place_forget()
     cam_off.place(x= 60, y= 450)
-    cap= cv2.VideoCapture(1)
+    cap= cv2.VideoCapture(0)
     video()
 
 
@@ -74,12 +101,18 @@ def videocam_off():
 
 # Función para preprocesar la imagen
 def preprocess_image(image_path= None, selec= 0, frame= None):
-    image = cv2.imread(image_path) if selec==0 else frame
+    if selec == 0:
+        image = cv2.imread(image_path, flags= 0)
+    else:
+        image= frame
+
+    if len(image.shape)== 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
     image = cv2.resize(image, (200, 200))
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = image / 255.0
     image = np.expand_dims(image, axis=-1)
-
+    
     return image
 
 
@@ -91,6 +124,12 @@ def predict_image_class(image_path= None, model= None, selec= 0, frame= None):
     prediction = model.predict(np.array([preprocessed_image]))
     predicted_class = np.argmax(prediction)
 
+    # Enviamos la señal al esp32
+    if predicted_class == 1:
+        esp32.write(('1\n').encode())
+    else:
+        esp32 .write(('0\n').encode())
+    
     # Es para sacar el mensaje que queremos arrojar 
     diccionario= {0:'No Hay Grieta', 1:'Hay Grieta'}
     mensaje= diccionario[predicted_class]
@@ -120,6 +159,9 @@ def clasificar_imagen(image_path):
 
 # Cargar el modelo entrenado
 modelo = load_model('Modelo_deteccion_grietas.h5')
+
+# Comunicacion serial esp32
+esp32= serial.Serial('COM7',9600)
 
 # Creamos la instacia de la ventana
 pantalla= Tk()
